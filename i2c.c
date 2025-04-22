@@ -12,8 +12,7 @@ static inline void i2c_reset(I2C_TypeDef* i2c_dev) {
   
 static inline i2c_result_t i2c_start(I2C_TypeDef* i2c_dev) {  
     LL_I2C_GenerateStartCondition(i2c_dev);
-    volatile uint32_t tmp = SysTick->CTRL; // reset timer
-    ((void)tmp);
+    (void)SysTick->CTRL; // reset timer
 
     uint8_t timeout = I2C_TIMEOUT;
     while (!LL_I2C_IsActiveFlag_SB(i2c_dev)) {
@@ -31,7 +30,7 @@ static inline i2c_result_t i2c_check_tx_result(I2C_TypeDef* i2c_dev, uint32_t su
     volatile uint32_t reg = 0;
     uint8_t timeout = I2C_TIMEOUT;
 
-    reg = SysTick->CTRL; // reset timer
+    (void)SysTick->CTRL; // reset timer
     while (1) {
         reg = i2c_dev->SR1;
         if (reg & I2C_SR1_BERR) {
@@ -70,8 +69,7 @@ static inline i2c_result_t i2c_send_byte(I2C_TypeDef* i2c_dev, uint8_t* data) {
 
 static inline i2c_result_t i2c_recv_byte(I2C_TypeDef* i2c_dev, uint8_t* data) {
     LL_I2C_AcknowledgeNextData(i2c_dev, LL_I2C_ACK);
-    volatile uint32_t tmp = SysTick->CTRL; // reset timer
-    ((void)tmp);
+    (void)SysTick->CTRL; // reset timer
 
     uint8_t timeout = I2C_TIMEOUT;
     while (!LL_I2C_IsActiveFlag_RXNE(i2c_dev)) {
@@ -87,7 +85,6 @@ static inline i2c_result_t i2c_recv_byte(I2C_TypeDef* i2c_dev, uint8_t* data) {
 }
 
 i2c_result_t i2c_read(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_addr, uint8_t* read_buf, uint8_t read_size) {
-    volatile uint32_t reg = 0;
     i2c_result_t ret = I2C_RESULT_OK;  
 
     if ((ret = i2c_start(i2c_dev)) != I2C_RESULT_OK) {
@@ -97,8 +94,8 @@ i2c_result_t i2c_read(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_addr
     if ((ret = i2c_send_addr(i2c_dev, (slave_addr << 1))) != I2C_RESULT_OK) {
       return ret;
     } 
-    reg = i2c_dev->SR2;
-    ((void)reg);
+
+    (void)i2c_dev->SR2; // clear addr condition
 
     if ((ret = i2c_send_byte(i2c_dev, &reg_addr)) != I2C_RESULT_OK) {
       return ret;
@@ -112,8 +109,8 @@ i2c_result_t i2c_read(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_addr
     if ((ret = i2c_send_addr(i2c_dev, ((slave_addr << 1) | 0x1))) != I2C_RESULT_OK) {
       return ret;
     } 
-    reg = i2c_dev->SR2;
-    ((void)reg);
+
+    (void)i2c_dev->SR2; // clear addr condition
     
     while(read_size) {
         if ((ret = i2c_recv_byte(i2c_dev, &read_buf[--read_size])) != I2C_RESULT_OK) {
@@ -127,7 +124,6 @@ i2c_result_t i2c_read(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_addr
 }
 
 i2c_result_t i2c_write(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_addr, uint8_t* write_buf, uint8_t write_size) {
-    volatile uint32_t reg = 0;
     uint8_t ret = I2C_RESULT_OK;
     if ((ret = i2c_start(i2c_dev)) != I2C_RESULT_OK) {
         return ret;
@@ -136,9 +132,9 @@ i2c_result_t i2c_write(I2C_TypeDef* i2c_dev, uint8_t slave_addr, uint8_t reg_add
     if ((ret = i2c_send_addr(i2c_dev, (slave_addr << 1))) != I2C_RESULT_OK) {
         return ret;
     } 
-    reg = i2c_dev->SR2;
-    ((void)reg);
-
+    
+    (void)i2c_dev->SR2; // clear addr condition
+    
     if ((ret = i2c_send_byte(i2c_dev, &reg_addr)) != I2C_RESULT_OK) {
         return ret;
     }
